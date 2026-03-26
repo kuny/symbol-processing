@@ -16,6 +16,13 @@
 (define (get-rulename rule) (car rule))
 (define (get-cond rule) (cadr rule))
 (define (get-action rule) (cadddr rule))
+(define (get-rule r rules)
+  (if (null? rules) '()
+    (let ((rule (car rules)))
+      (if (eq? (car rule) r)
+        rule
+        (get-rule r (cdr rules))))))
+
 
 (define (empty? a) (null? a))
 
@@ -36,13 +43,13 @@
          (condition-aux? (cdr conds) states))
         (else (element? conds states))))
 
-(define (pattern-matching states)
+(define (pattern-matching rules states)
   (let ((enables '()))
     (for-each (lambda (candidate)
                 (cond ((rule-cond? (get-cond candidate) states)
                        (set! enables (cons (get-rulename candidate) enables)))))
                   
-              *rule-base*)
+              rules)
     enables))
 
 (define (printn x . y)
@@ -57,20 +64,13 @@
               (display "enter rule-name >> ")
               (read))))
 
-(define (get-rule r rules)
-  (if (null? rules) '()
-    (let ((rule (car rules)))
-      (if (eq? (car rule) r)
-        rule
-        (get-rule r (cdr rules))))))
-
 (define (eval-action action memory)
   (set! memory (cons action memory))
   (printn "action : " action)
   memory)
 
-(define (rule-action! r memory)
-  (let ((rule (get-rule r *rule-base*)))
+(define (rule-action! r rules memory)
+  (let ((rule (get-rule r rules)))
     (if (null? rule) memory
       (eval-action (get-action rule) memory))))
 
@@ -79,11 +79,11 @@
 
 (define (forward-reasoning memory)
   (do
-    ((rule (choice (pattern-matching memory))
-           (choice (pattern-matching memory))))
+    ((rule (choice (pattern-matching *rule-base* memory))
+           (choice (pattern-matching *rule-base* memory))))
     ((or (null? rule)
          (eq? rule 'quit)) 'end)
-    (set! memory (rule-action! rule memory))
+    (set! memory (rule-action! rule *rule-base* memory))
     (output-data memory)))
 
 
@@ -109,6 +109,36 @@
   (check-equal? (get-cond '(rule7 (Swimming) --> (Equator))) '(Swimming))
   ;get-action
   (check-equal? (get-action '(rule7 (Swimming) --> (Equator))) '(Equator))
+
+  ;get-rule
+  ;condition-aux?  
+  ;rule-cond
+  ;pattern-matching
+  ;rule-action! (rule-action! r rules memory)
+  (let ((rules 
+          '((rule1 (and (USA) (English)) --> (Honolulu))
+            (rule2 (and (Europe) (France)) --> (Paris))
+            (rule3 (and (USA) (Continent)) --> (LosAnge))
+            (rule4 (and (Island) (Equator)) --> (Honolulu))
+            (rule5 (and (Asia) (Equator)) --> (Singapore))
+            (rule6 (and (Island) (Micronesia)) --> (Guam))
+            (rule7 (Swimming) --> (Equator))))
+        (states '((Swimming) (USA) (English))))
+
+    (check-equal? (get-rule 'rule1 rules) '(rule1 (and (USA) (English)) --> (Honolulu)))
+    (check-equal? (get-rule 'rule7 rules) '(rule7 (Swimming) --> (Equator)))
+    (check-equal? (get-rule 'rule10 rules) '())
+
+    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 0))) states) #t)
+    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 2))) states) #f)
+
+    (check-equal? (rule-cond? (get-cond (list-ref rules 0)) states) #t)
+    (check-equal? (rule-cond? (get-cond (list-ref rules 6)) states) #t)
+    (check-equal? (rule-cond? (get-cond (list-ref rules 2)) states) #f)
+
+    (check-equal? (pattern-matching rules states) '(rule7 rule1))
+    
+    (check-equal? (rule-action! (get-rulename (list-ref rules 0)) rules states) '((Honolulu) (Swimming) (USA) (English))))
 )
 (module+ main
   ;; (Optional) main submodule. Put code here if you need it to be executed when
