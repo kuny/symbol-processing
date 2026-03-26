@@ -94,8 +94,22 @@
   ;; or with `raco test`. The code here does not run when this file is
   ;; required by another module.
 
-  (check-equal? (+ 2 2) 4))
+  ;empty?
+  (check-equal? (empty? '()) #t)
+  (check-equal? (empty? '(1 2 3)) #f)
+  ;element?
+  (check-equal? (element? 1 '(1 2 3)) #t)
+  (check-equal? (element? 10 '(1 2 3)) #f)
+  (check-equal? (element? 'a '(1 2 a 3)) #t)
+  (check-equal? (element? 'a '(1 2 3)) #f)
 
+  ;get-rulename
+  (check-equal? (get-rulename '(rule7 (Swimming) --> (Equator))) 'rule7)
+  ;get-cond
+  (check-equal? (get-cond '(rule7 (Swimming) --> (Equator))) '(Swimming))
+  ;get-action
+  (check-equal? (get-action '(rule7 (Swimming) --> (Equator))) '(Equator))
+)
 (module+ main
   ;; (Optional) main submodule. Put code here if you need it to be executed when
   ;; this file is run using DrRacket or the `racket` executable.  The code here
