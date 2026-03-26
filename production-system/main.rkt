@@ -11,7 +11,7 @@
     (rule6 (and (Island) (Micronesia)) --> (Guam))
     (rule7 (Swimming) --> (Equator))))
 
-(define *working-memory* '((Island) (Swiming)))
+(define *working-memory* '((Island) (Swimming)))
 
 (define (get-rulename rule) (car rule))
 (define (get-cond rule) (cadr rule))
@@ -20,7 +20,7 @@
 (define (empty? a) (null? a))
 
 (define (element? x a)
-  (cond ((empty? a) #t)
+  (cond ((empty? a) #f)
         ((equal? x (car a)) #t)
         (else (element? x (cdr a)))))
 
@@ -39,7 +39,7 @@
 (define (pattern-matching states)
   (let ((enables '()))
     (for-each (lambda (candidate)
-                (cond ([rule-cond? (get-cond candidate) states]
+                (cond ((rule-cond? (get-cond candidate) states)
                        (set! enables (cons (get-rulename candidate) enables)))))
                   
               *rule-base*)
@@ -47,12 +47,12 @@
 
 (define (printn x . y)
   (display x)
-  (cond ([not (null? y)]
+  (cond ((not (null? y))
          (for-each (lambda (z) (display z)) y)))
   (newline))
 
 (define (choice lst)
-  (cond ((null? list) '())
+  (cond ((null? lst) '())
         (else (printn "enable rules : " lst)
               (display "enter rule-name >> ")
               (read))))
@@ -79,10 +79,10 @@
 
 (define (forward-reasoning memory)
   (do
-    ([rule (choice (pattern-matching memory))
-           (choice (pattern-matching memory))])
-    [(or (null? rule)
-         (eq? rule 'quit)) 'end]
+    ((rule (choice (pattern-matching memory))
+           (choice (pattern-matching memory))))
+    ((or (null? rule)
+         (eq? rule 'quit)) 'end)
     (set! memory (rule-action! rule memory))
     (output-data memory)))
 
