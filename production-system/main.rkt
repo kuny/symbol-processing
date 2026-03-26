@@ -23,7 +23,6 @@
         rule
         (get-rule r (cdr rules))))))
 
-
 (define (empty? a) (null? a))
 
 (define (element? x a)
@@ -77,16 +76,14 @@
 (define (output-data memory)
   (printn " *working-memory : " memory))
 
-(define (forward-reasoning memory)
+(define (forward-reasoning rules memory choice-rule)
   (do
-    ((rule (choice (pattern-matching *rule-base* memory))
-           (choice (pattern-matching *rule-base* memory))))
+    ((rule (choice-rule (pattern-matching rules memory))
+           (choice-rule (pattern-matching rules memory))))
     ((or (null? rule)
          (eq? rule 'quit)) 'end)
-    (set! memory (rule-action! rule *rule-base* memory))
+    (set! memory (rule-action! rule rules memory))
     (output-data memory)))
-
-
 
 
 (module+ test
@@ -114,7 +111,8 @@
   ;condition-aux?  
   ;rule-cond
   ;pattern-matching
-  ;rule-action! (rule-action! r rules memory)
+  ;rule-action!
+  ;forward-reasoning
   (let ((rules 
           '((rule1 (and (USA) (English)) --> (Honolulu))
             (rule2 (and (Europe) (France)) --> (Paris))
@@ -123,29 +121,35 @@
             (rule5 (and (Asia) (Equator)) --> (Singapore))
             (rule6 (and (Island) (Micronesia)) --> (Guam))
             (rule7 (Swimming) --> (Equator))))
-        (states '((Swimming) (USA) (English))))
+        (states1 '((Swimming) (USA) (English)))
+        (states2 '((Island) (Swimming))))
 
     (check-equal? (get-rule 'rule1 rules) '(rule1 (and (USA) (English)) --> (Honolulu)))
     (check-equal? (get-rule 'rule7 rules) '(rule7 (Swimming) --> (Equator)))
     (check-equal? (get-rule 'rule10 rules) '())
 
-    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 0))) states) #t)
-    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 2))) states) #f)
+    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 0))) states1) #t)
+    (check-equal? (condition-aux? (cdr (get-cond (list-ref rules 2))) states1) #f)
 
-    (check-equal? (rule-cond? (get-cond (list-ref rules 0)) states) #t)
-    (check-equal? (rule-cond? (get-cond (list-ref rules 6)) states) #t)
-    (check-equal? (rule-cond? (get-cond (list-ref rules 2)) states) #f)
+    (check-equal? (rule-cond? (get-cond (list-ref rules 0)) states1) #t)
+    (check-equal? (rule-cond? (get-cond (list-ref rules 6)) states1) #t)
+    (check-equal? (rule-cond? (get-cond (list-ref rules 2)) states1) #f)
 
-    (check-equal? (pattern-matching rules states) '(rule7 rule1))
+    (check-equal? (pattern-matching rules states1) '(rule7 rule1))
     
-    (check-equal? (rule-action! (get-rulename (list-ref rules 0)) rules states) '((Honolulu) (Swimming) (USA) (English))))
+    (check-equal? 
+      (rule-action! (get-rulename (list-ref rules 0)) rules states1) 
+      '((Honolulu) (Swimming) (USA) (English)))
+
+    (check-equal? (forward-reasoning rules states2 choice) 'end))
+
 )
 (module+ main
   ;; (Optional) main submodule. Put code here if you need it to be executed when
   ;; this file is run using DrRacket or the `racket` executable.  The code here
   ;; does not run when this file is required by another module. Documentation:
   ;; http://docs.racket-lang.org/guide/Module_Syntax.html#%28part._main-and-test%29
-  (forward-reasoning *working-memory*))
+  (forward-reasoning *rule-base* *working-memory* choice))
 
 #|
   (require racket/cmdline)
